@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laya in the browser</title>
+<script src="./coi.js"></script>
+<style>
+  :root{
+    --bg:#f6f5f1; --card:#ffffff; --ink:#1c1b19; --ink2:#5b5850; --line:#e3e0d8;
+    --accent:#2a5bd7; --accent-ink:#ffffff; --good:#1f7a4d; --warn:#b4570a; --bar:#d9e2fb; --bar-top:#2a5bd7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#151513; --card:#1e1d1a; --ink:#f0eee8; --ink2:#a6a297; --line:#33312c;
+      --accent:#7ea2ff; --accent-ink:#0d1220; --good:#5fcf95; --warn:#f0a35c; --bar:#2a3555; --bar-top:#7ea2ff; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:980px;margin:0 auto;padding:28px 16px 64px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--ink2);margin:0 0 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin:0 0 10px;font-weight:600}
+  label{display:block;font-size:13px;color:var(--ink2);margin:0 0 4px}
+  select,textarea,input[type=number]{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+  textarea{font-family:var(--mono);font-size:13px;resize:vertical}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end}
+  button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 16px;cursor:pointer}
+  button.secondary{background:transparent;color:var(--accent)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .status{margin-top:12px;font-size:14px;color:var(--ink2)}
+  .progress{height:6px;background:var(--bar);border-radius:3px;overflow:hidden;margin-top:8px;display:none}
+  .progress>div{height:100%;width:0;background:var(--bar-top);transition:width .15s}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .badge{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--ink2)}
+  .badge.ok{color:var(--good);border-color:var(--good)}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){.cols{grid-template-columns:1fr}}
+  .q{border-top:1px solid var(--line);padding:12px 0}
+  .q:first-child{border-top:0;padding-top:0}
+  .qhead{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:6px}
+  .qname{font-weight:600}
+  .qtype{font-size:12px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
+  .bar{display:grid;grid-template-columns:110px 1fr 52px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+  .bar .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
+  .bar .track{height:10px;background:var(--bar);border-radius:5px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--bar-top);opacity:.45;border-radius:5px}
+  .bar.top .fill{opacity:1}.bar.top .name{color:var(--ink);font-weight:600}
+  .bar .val{text-align:right;font-variant-numeric:tabular-nums}
+  .meta{font-size:13px;color:var(--ink2);margin-top:6px}
+  .decision{margin-top:8px;font-size:13px;padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+  .decision b.auto{color:var(--good)} .decision b.human{color:var(--warn)}
+  pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:280px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--ink2);font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .note{font-size:13px;color:var(--ink2)}
+  .warn{color:var(--warn)}
+  .stats{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px}
+  .stat b{font-size:20px;display:block;font-variant-numeric:tabular-nums}
+  .stat span{font-size:12px;color:var(--ink2)}
+  details summary{cursor:pointer;color:var(--accent);font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Laya in your browser</h1>
+  <p class="sub">The English Laya decision model (ModernBERT-large + typed heads) running locally through ONNX Runtime Web. Nothing you type leaves this page.</p>
+
+  <section class="card" id="loadCard">
+    <h2>1 · Load the model</h2>
+    <div class="row">
+      <div>
+        <label for="variant">Model build</label>
+        <select id="variant"><option>Loading model list…</option></select>
+      </div>
+      <div>
+        <label for="backend">Backend</label>
+        <select id="backend">
+          <option value="wasm">WASM (CPU, checked against PyTorch)</option>
+          <option value="auto">Auto: WebGPU if available (experimental)</option>
+          <option value="webgpu">WebGPU (experimental, see README)</option>
+        </select>
+      </div>
+      <div><button id="loadBtn">Load model</button></div>
+    </div>
+    <div class="progress" id="progress"><div id="progressBar"></div></div>
+    <div class="status" id="status">Not loaded yet. Loading downloads the model files from this site (a few hundred MB, once per visit).</div>
+    <div class="badges" id="badges"></div>
+  </section>
+
+  <section class="card">
+    <h2>2 · Ask typed questions</h2>
+    <div class="row" style="margin-bottom:12px">
+      <div>
+        <label for="preset">Example</label>
+        <select id="preset"></select>
+      </div>
+      <div>
+        <label for="thresh">Act automatically when confidence ≥ <span id="threshVal">0.90</span></label>
+        <input type="range" id="thresh" min="0.5" max="0.99" step="0.01" value="0.9" style="width:100%">
+      </div>
+      <div><button id="runBtn" disabled>Run (Ctrl+Enter)</button></div>
+    </div>
+    <div class="cols">
+      <div>
+        <label for="state">State (text or JSON)</label>
+        <textarea id="state" rows="9" spellcheck="false"></textarea>
+      </div>
+      <div>
+        <label for="questions">Questions (JSON, same shape as the Python SDK)</label>
+        <textarea id="questions" rows="9" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <p class="note">Question types: <code>choice</code> (labeled options), <code>score</code> (ordered rubric), <code>noul</code> (yes/no probability). Laya limits: about 20 options per choice, options must fit in 192 tokens, state is cut at 512 tokens in total.</p>
+  </section>
+
+  <section class="card" id="resultCard" style="display:none">
+    <h2>Result</h2>
+    <div class="stats">
+      <div class="stat"><b id="sLatency">–</b><span>model time (ms)</span></div>
+      <div class="stat"><b id="sTokens">–</b><span>input tokens (all questions)</span></div>
+      <div class="stat"><b id="sBackend">–</b><span>backend</span></div>
+    </div>
+    <div id="answers"></div>
+    <details><summary>Raw JSON</summary><pre id="raw"></pre></details>
+  </section>
+
+  <section class="card">
+    <h2>3 · Check it against the original PyTorch model</h2>
+    <p class="note">Runs six saved test cases in this browser and compares the probabilities with what the original fp32 PyTorch model produced on the same inputs. Quantization changes the numbers a little, so use this to see how much before you rely on the confidence values.</p>
+    <button class="secondary" id="verifyBtn" disabled>Run comparison</button>
+    <div id="verifyOut" style="margin-top:12px"></div>
+  </section>
+
+  <p class="note">Laya is an open-source model by ConvAI Innovations (Apache-2.0). This page is an unofficial browser port for experimentation, not affiliated with them. The model is small and narrow: test it on your own data and check its confidence numbers before letting it act on its own.</p>
+</main>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

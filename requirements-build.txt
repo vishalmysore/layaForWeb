@@ -1,0 +1,12 @@
+# Used only to convert the model (build step). The website itself needs none of this.
+# Exact versions that were tested together. CPU-only PyTorch is enough.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0
+transformers==5.17.0
+safetensors==0.8.0
+huggingface_hub==1.32.0
+numpy==2.4.4
+onnx==1.23.0
+onnxscript==0.7.2
+onnxruntime==1.25.0
+laya==0.3.4

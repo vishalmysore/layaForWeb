@@ -1,0 +1,283 @@
+[
+ {
+  "name": "support ticket",
+  "state": {
+   "ticket": {
+    "subject": "App crashes on launch",
+    "text": "Since the last update, the app closes as soon as I open it. I have a demo in one hour!"
+   }
+  },
+  "questions": {
+   "team": {
+    "type": "choice",
+    "instructions": "Which team should handle this?",
+    "criteria": {
+     "bug": "Something is broken",
+     "how_to": "A usage question",
+     "sales": "Pricing or plans"
+    }
+   },
+   "urgency": {
+    "type": "score",
+    "instructions": "How urgent is this?",
+    "criteria": [
+     "Can wait",
+     "This week",
+     "Today",
+     "Right now"
+    ]
+   },
+   "angry": {
+    "type": "noul",
+    "instructions": "The customer sounds angry"
+   }
+  },
+  "answers": {
+   "team": {
+    "type": "choice",
+    "choice": "bug",
+    "probabilities": {
+     "bug": 0.9572,
+     "how_to": 0.0263,
+     "sales": 0.0165
+    },
+    "confidence": 0.813,
+    "action": {
+     "act_probability": 1.0
+    }
+   },
+   "urgency": {
+    "type": "score",
+    "score": 1.6248,
+    "legend": {
+     "0": "Can wait",
+     "1": "This week",
+     "2": "Today",
+     "3": "Right now"
+    },
+    "probabilities": {
+     "0": 0.0654,
+     "1": 0.438,
+     "2": 0.303,
+     "3": 0.1936
+    },
+    "confidence": 0.1203,
+    "action": {
+     "act_probability": 1.0
+    }
+   },
+   "angry": {
+    "type": "noul",
+    "noul": 0.1846,
+    "confidence": 0.8154,
+    "action": {
+     "act_probability": 1.0
+    }
+   }
+  },
+  "input_tokens": 220
+ },
+ {
+  "name": "agent guardrail",
+  "state": "Agent plan: run `DELETE FROM customers WHERE last_login < '2020-01-01'` on the production database. No backup has been taken and no human has reviewed this command.",
+  "questions": {
+   "safe": {
+    "type": "noul",
+    "instructions": "Is this safe to run without a human approving it first?"
+   }
+  },
+  "answers": {
+   "safe": {
+    "type": "noul",
+    "noul": 0.8325,
+    "confidence": 0.8325,
+    "action": {
+     "act_probability": 1.0
+    }
+   }
+  },
+  "input_tokens": 77
+ },
+ {
+  "name": "sales lead",
+  "state": "Hi, I'm the VP of Engineering at a 400-person logistics company. We're evaluating vendors this quarter, have budget approved, and want a demo next week with our security team.",
+  "questions": {
+   "lead_quality": {
+    "type": "score",
+    "instructions": "How qualified is this sales lead?",
+    "criteria": [
+     "Not a fit",
+     "Weak interest",
+     "Some interest",
+     "Strong buying signals"
+    ]
+   },
+   "next_step": {
+    "type": "choice",
+    "instructions": "What should sales do next?",
+    "criteria": {
+     "book_demo": "Schedule a demo",
+     "nurture": "Add to a nurture campaign",
+     "ignore": "No action needed"
+    }
+   }
+  },
+  "answers": {
+   "lead_quality": {
+    "type": "score",
+    "score": 1.9951,
+    "legend": {
+     "0": "Not a fit",
+     "1": "Weak interest",
+     "2": "Some interest",
+     "3": "Strong buying signals"
+    },
+    "probabilities": {
+     "0": 0.0915,
+     "1": 0.157,
+     "2": 0.4163,
+     "3": 0.3352
+    },
+    "confidence": 0.105,
+    "action": {
+     "act_probability": 1.0
+    }
+   },
+   "next_step": {
+    "type": "choice",
+    "choice": "book_demo",
+    "probabilities": {
+     "book_demo": 0.9705,
+     "nurture": 0.0082,
+     "ignore": 0.0212
+    },
+    "confidence": 0.8632,
+    "action": {
+     "act_probability": 1.0
+    }
+   }
+  },
+  "input_tokens": 153
+ },
+ {
+  "name": "health message routing",
+  "state": "Patient message: I've had chest tightness and shortness of breath since this morning, and my left arm feels numb.",
+  "questions": {
+   "route": {
+    "type": "choice",
+    "instructions": "Where should this message go?",
+    "criteria": {
+     "emergency": "Needs immediate emergency attention",
+     "nurse": "Nurse triage within a day",
+     "admin": "Administrative request",
+     "refill": "Medication refill"
+    }
+   },
+   "urgent": {
+    "type": "noul",
+    "instructions": "The patient describes symptoms that could be life-threatening"
+   }
+  },
+  "answers": {
+   "route": {
+    "type": "choice",
+    "choice": "emergency",
+    "probabilities": {
+     "emergency": 0.9287,
+     "nurse": 0.0383,
+     "admin": 0.0169,
+     "refill": 0.0161
+    },
+    "confidence": 0.7627,
+    "action": {
+     "act_probability": 1.0
+    }
+   },
+   "urgent": {
+    "type": "noul",
+    "noul": 0.7344,
+    "confidence": 0.7344,
+    "action": {
+     "act_probability": 1.0
+    }
+   }
+  },
+  "input_tokens": 129
+ },
+ {
+  "name": "long state",
+  "state": "Shipment update log. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. The carrier reported a delay at the regional hub because of weather. Final note: the customer needs the parcel by Friday for an event.",
+  "questions": {
+   "at_risk": {
+    "type": "noul",
+    "instructions": "The delivery is at risk of missing the customer's deadline"
+   },
+   "action": {
+    "type": "choice",
+    "instructions": "What should support do?",
+    "criteria": {
+     "reship": "Send a replacement",
+     "notify": "Notify the customer of the delay",
+     "wait": "Wait, no action needed"
+    }
+   }
+  },
+  "answers": {
+   "at_risk": {
+    "type": "noul",
+    "noul": 0.4259,
+    "confidence": 0.5741,
+    "action": {
+     "act_probability": 1.0
+    }
+   },
+   "action": {
+    "type": "choice",
+    "choice": "reship",
+    "probabilities": {
+     "reship": 0.3671,
+     "notify": 0.3544,
+     "wait": 0.2786
+    },
+    "confidence": 0.0064,
+    "action": {
+     "act_probability": 1.0
+    }
+   }
+  },
+  "input_tokens": 894
+ },
+ {
+  "name": "guardrail (destructive wording)",
+  "state": "Agent plan: run `DELETE FROM customers WHERE last_login < '2020-01-01'` on the production database. No backup has been taken and no human has reviewed this command.",
+  "questions": {
+   "destructive": {
+    "type": "noul",
+    "instructions": "The command is destructive and cannot be undone"
+   },
+   "needs_human": {
+    "type": "noul",
+    "instructions": "A human should approve this command before it runs"
+   }
+  },
+  "answers": {
+   "destructive": {
+    "type": "noul",
+    "noul": 0.6316,
+    "confidence": 0.6316,
+    "action": {
+     "act_probability": 1.0
+    }
+   },
+   "needs_human": {
+    "type": "noul",
+    "noul": 0.337,
+    "confidence": 0.663,
+    "action": {
+     "act_probability": 1.0
+    }
+   }
+  },
+  "input_tokens": 148
+ }
+]

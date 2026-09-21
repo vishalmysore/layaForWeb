@@ -1,0 +1,16 @@
+{
+  "name": "laya-for-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Run the English Laya decision model in the browser with ONNX Runtime Web",
+  "type": "module",
+  "scripts": {
+    "test:sequences": "node tests/seq_parity.mjs",
+    "prepare-site": "node scripts/prepare_site.mjs",
+    "serve": "python serve.py"
+  },
+  "dependencies": {
+    "@huggingface/tokenizers": "0.2.0",
+    "onnxruntime-web": "1.30.0"
+  }
+}
