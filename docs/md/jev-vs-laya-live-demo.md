@@ -190,11 +190,6 @@ The 4-bit build does run on WebGPU. I loaded it on my desktop GPU and pressed th
 
 That is a bigger drift than the 8-bit build shows, so the obvious suspect is WebGPU itself. It is not. I ran the same 4-bit build on the CPU in a headless browser and got the same summary: 10 of 12 top answers and a largest probability difference of 0.274. WebGPU and WASM agree with each other for the same build, and the gap to the original model comes from squeezing the weights into 4 bits. The practical trade-off is that WebGPU is available only for the smaller, less faithful build, while the more faithful 8-bit build is WASM-only. I have not measured WebGPU speed, so the timings in this article are all from WASM.
 
-The page also opens on a phone. The screenshot below is the demo on an Android phone, with the backend menu open. I have not benchmarked phone performance, and the 8-bit model is a large download and a lot of memory for a phone, so the 4-bit build is the sensible place to start.
-
-![Real screenshot of the Laya browser demo on an Android phone, with the backend menu showing WASM, Auto and WebGPU](images/laya-demo-on-android-phone.png)
-
-*Real screenshot on an Android phone.*
 
 ---
 
