@@ -1,0 +1,124 @@
+{
+  "domain": "patient-messages",
+  "description": "Portal messages to a clinic, routed by urgency. Synthetic text for testing routing only; not medical advice.",
+  "questions": {
+    "route": {
+      "type": "choice",
+      "instructions": "Where should this message go?",
+      "criteria": {
+        "emergency": "Needs immediate emergency attention",
+        "nurse": "Nurse triage within a day",
+        "admin": "Administrative request",
+        "refill": "Medication refill"
+      }
+    },
+    "urgent": {
+      "type": "noul",
+      "instructions": "The patient describes symptoms that could be life-threatening"
+    }
+  },
+  "cases": [
+    {
+      "id": "pm-01",
+      "state": "Patient message: Hi, I need to reschedule my appointment next Tuesday to Thursday if possible.",
+      "expected": {
+        "route": "admin",
+        "urgent": false
+      }
+    },
+    {
+      "id": "pm-02",
+      "state": "Patient message: Can I get a refill on my usual allergy tablets? I have about three days left.",
+      "expected": {
+        "route": "refill",
+        "urgent": false
+      }
+    },
+    {
+      "id": "pm-03",
+      "state": "Patient message: My child has had a fever for two days and is now very sleepy and hard to wake up.",
+      "expected": {
+        "route": "emergency",
+        "urgent": true
+      }
+    },
+    {
+      "id": "pm-04",
+      "state": "Patient message: I've had a mild sore throat since yesterday, no fever. Should I come in?",
+      "expected": {
+        "route": "nurse",
+        "urgent": false
+      }
+    },
+    {
+      "id": "pm-05",
+      "state": "Patient message: Sudden severe headache, the worst of my life, and my vision is blurry.",
+      "expected": {
+        "route": "emergency",
+        "urgent": true
+      }
+    },
+    {
+      "id": "pm-06",
+      "state": "Patient message: Could you send my vaccination record to my new school?",
+      "expected": {
+        "route": "admin",
+        "urgent": false
+      }
+    },
+    {
+      "id": "pm-07",
+      "state": "Patient message: I've been dizzy on and off for a week when I stand up quickly.",
+      "expected": {
+        "route": "nurse",
+        "urgent": false
+      },
+      "hard": [
+        "urgent"
+      ]
+    },
+    {
+      "id": "pm-08",
+      "state": "Patient message: I ran out of my inhaler and I'm having trouble breathing right now.",
+      "expected": {
+        "route": "emergency",
+        "urgent": true
+      },
+      "hard": [
+        "route"
+      ]
+    },
+    {
+      "id": "pm-09",
+      "state": "Patient message: What are your opening hours over the holidays?",
+      "expected": {
+        "route": "admin",
+        "urgent": false
+      }
+    },
+    {
+      "id": "pm-10",
+      "state": "Patient message: The rash on my arm has been spreading slowly for three days. It itches but there are no other symptoms.",
+      "expected": {
+        "route": "nurse",
+        "urgent": false
+      }
+    },
+    {
+      "id": "pm-11",
+      "state": "Patient message: Please renew my usual prescription. The pharmacy said it has expired.",
+      "expected": {
+        "route": "refill",
+        "urgent": false
+      }
+    },
+    {
+      "id": "pm-12",
+      "state": "Patient message: My elderly father fell and can't move his leg. He is in a lot of pain.",
+      "expected": {
+        "route": "emergency",
+        "urgent": true
+      }
+    }
+  ]
+}

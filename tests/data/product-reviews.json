@@ -1,0 +1,165 @@
+{
+  "domain": "product-reviews",
+  "description": "Short customer reviews of household products.",
+  "questions": {
+    "sentiment": {
+      "type": "score",
+      "instructions": "How does the reviewer feel about the product?",
+      "criteria": [
+        "Very negative",
+        "Negative",
+        "Neutral",
+        "Positive",
+        "Very positive"
+      ]
+    },
+    "topic": {
+      "type": "choice",
+      "instructions": "What is the review mostly about?",
+      "criteria": {
+        "quality": "How well the product is made or works",
+        "shipping": "Delivery and packaging",
+        "value": "Price compared with what you get",
+        "usability": "Setup and ease of use",
+        "support": "Customer service"
+      }
+    },
+    "recommends": {
+      "type": "noul",
+      "instructions": "The reviewer would recommend this product"
+    }
+  },
+  "cases": [
+    {
+      "id": "pr-01",
+      "state": "Absolutely love this blender. Crushes ice in seconds and cleans up easily. Best purchase I've made all year.",
+      "expected": {
+        "sentiment": 4,
+        "topic": "quality",
+        "recommends": true
+      }
+    },
+    {
+      "id": "pr-02",
+      "state": "Arrived three weeks late and the box was crushed. The product itself is fine but I'm annoyed with the delivery.",
+      "expected": {
+        "sentiment": 1,
+        "topic": "shipping",
+        "recommends": false
+      },
+      "hard": [
+        "recommends",
+        "sentiment"
+      ]
+    },
+    {
+      "id": "pr-03",
+      "state": "It's okay. Does what it says. Nothing special, nothing wrong.",
+      "expected": {
+        "sentiment": 2,
+        "topic": "quality",
+        "recommends": false
+      },
+      "hard": [
+        "topic",
+        "recommends"
+      ]
+    },
+    {
+      "id": "pr-04",
+      "state": "Broke after two days. Cheap plastic, the hinge snapped. Do not buy.",
+      "expected": {
+        "sentiment": 0,
+        "topic": "quality",
+        "recommends": false
+      }
+    },
+    {
+      "id": "pr-05",
+      "state": "Way too expensive for what you get. A similar one costs half as much and works the same.",
+      "expected": {
+        "sentiment": 1,
+        "topic": "value",
+        "recommends": false
+      }
+    },
+    {
+      "id": "pr-06",
+      "state": "The setup was confusing and the instructions made no sense, but once it was running it works well.",
+      "expected": {
+        "sentiment": 2,
+        "topic": "usability",
+        "recommends": true
+      },
+      "hard": [
+        "sentiment",
+        "recommends"
+      ]
+    },
+    {
+      "id": "pr-07",
+      "state": "I emailed customer service twice and never got an answer. Terrible support.",
+      "expected": {
+        "sentiment": 0,
+        "topic": "support",
+        "recommends": false
+      }
+    },
+    {
+      "id": "pr-08",
+      "state": "Great value for the price. Does everything I need and the battery lasts all day.",
+      "expected": {
+        "sentiment": 3,
+        "topic": "value",
+        "recommends": true
+      }
+    },
+    {
+      "id": "pr-09",
+      "state": "Fast shipping, arrived a day early and nicely packed. The kettle boils quickly.",
+      "expected": {
+        "sentiment": 3,
+        "topic": "shipping",
+        "recommends": true
+      },
+      "hard": [
+        "topic"
+      ]
+    },
+    {
+      "id": "pr-10",
+      "state": "The app that controls it is clunky and keeps disconnecting. The hardware is great though.",
+      "expected": {
+        "sentiment": 1,
+        "topic": "usability",
+        "recommends": false
+      },
+      "hard": [
+        "sentiment",
+        "recommends"
+      ]
+    },
+    {
+      "id": "pr-11",
+      "state": "Five stars. Support replaced my unit within two days without any fuss.",
+      "expected": {
+        "sentiment": 4,
+        "topic": "support",
+        "recommends": true
+      }
+    },
+    {
+      "id": "pr-12",
+      "state": "Not worth it.",
+      "expected": {
+        "sentiment": 1,
+        "topic": "value",
+        "recommends": false
+      },
+      "hard": [
+        "sentiment",
+        "topic"
+      ]
+    }
+  ]
+}

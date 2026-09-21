@@ -1,0 +1,160 @@
+{
+  "domain": "delivery-exceptions",
+  "description": "Parcel delivery problems, sorted by what customer support should do.",
+  "questions": {
+    "action": {
+      "type": "choice",
+      "instructions": "What should support do?",
+      "criteria": {
+        "reship": "Send a replacement",
+        "notify": "Tell the customer about the delay or outcome",
+        "fix_address": "Contact the customer to fix the delivery details",
+        "wait": "Wait, no action needed"
+      }
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this?",
+      "criteria": [
+        "Not urgent",
+        "Soon",
+        "Urgent",
+        "Immediate"
+      ]
+    },
+    "upset": {
+      "type": "noul",
+      "instructions": "The customer is upset"
+    }
+  },
+  "cases": [
+    {
+      "id": "dl-01",
+      "state": "The recipient says the package was delivered to the wrong house. The delivery photo shows a different door number.",
+      "expected": {
+        "action": "reship",
+        "urgency": 1,
+        "upset": false
+      },
+      "hard": [
+        "action",
+        "upset"
+      ]
+    },
+    {
+      "id": "dl-02",
+      "state": "Parcel is delayed by two days because of severe weather in the region. The recipient has not contacted us.",
+      "expected": {
+        "action": "notify",
+        "urgency": 0,
+        "upset": false
+      }
+    },
+    {
+      "id": "dl-03",
+      "state": "The package arrived with a crushed box and the item inside is broken. The customer sent photos and asked for a replacement.",
+      "expected": {
+        "action": "reship",
+        "urgency": 1,
+        "upset": true
+      },
+      "hard": [
+        "upset"
+      ]
+    },
+    {
+      "id": "dl-04",
+      "state": "Parcel is in transit and on schedule. Estimated delivery is tomorrow.",
+      "expected": {
+        "action": "wait",
+        "urgency": 0,
+        "upset": false
+      }
+    },
+    {
+      "id": "dl-05",
+      "state": "Delivery failed: the recipient's building has a locked gate and no access code was provided.",
+      "expected": {
+        "action": "fix_address",
+        "urgency": 1,
+        "upset": false
+      }
+    },
+    {
+      "id": "dl-06",
+      "state": "The package has been lost for 10 days. Tracking has not updated since it left the warehouse, and the customer has emailed three times.",
+      "expected": {
+        "action": "reship",
+        "urgency": 2,
+        "upset": true
+      }
+    },
+    {
+      "id": "dl-07",
+      "state": "The first delivery attempt failed because nobody was home. The carrier will try again tomorrow.",
+      "expected": {
+        "action": "wait",
+        "urgency": 0,
+        "upset": false
+      },
+      "hard": [
+        "action"
+      ]
+    },
+    {
+      "id": "dl-08",
+      "state": "The customer says the parcel is a birthday gift that must arrive tomorrow, but tracking shows it is still at a depot 400 km away.",
+      "expected": {
+        "action": "reship",
+        "urgency": 3,
+        "upset": false
+      },
+      "hard": [
+        "action",
+        "upset"
+      ]
+    },
+    {
+      "id": "dl-09",
+      "state": "The address label has no street number. The customer's phone number is on file.",
+      "expected": {
+        "action": "fix_address",
+        "urgency": 1,
+        "upset": false
+      }
+    },
+    {
+      "id": "dl-10",
+      "state": "The parcel was returned to the sender because the recipient refused it at the door.",
+      "expected": {
+        "action": "notify",
+        "urgency": 0,
+        "upset": false
+      },
+      "hard": [
+        "action"
+      ]
+    },
+    {
+      "id": "dl-11",
+      "state": "The package is held at customs. The carrier estimates a delay of three to five days.",
+      "expected": {
+        "action": "notify",
+        "urgency": 0,
+        "upset": false
+      }
+    },
+    {
+      "id": "dl-12",
+      "state": "I am furious. It has been three weeks and my order still hasn't arrived and nobody answers my calls!",
+      "expected": {
+        "action": "reship",
+        "urgency": 2,
+        "upset": true
+      },
+      "hard": [
+        "action"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "domain": "sales-leads",
+  "description": "Inbound messages to a software company's sales inbox.",
+  "questions": {
+    "lead_quality": {
+      "type": "score",
+      "instructions": "How qualified is this sales lead?",
+      "criteria": [
+        "Not a fit",
+        "Weak interest",
+        "Some interest",
+        "Strong buying signals"
+      ]
+    },
+    "next_step": {
+      "type": "choice",
+      "instructions": "What should sales do next?",
+      "criteria": {
+        "book_demo": "Schedule a demo",
+        "nurture": "Add to a nurture campaign",
+        "ignore": "No action needed"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "sl-01",
+      "state": "Hi, I'm the VP of Engineering at a 400-person logistics company. We're evaluating vendors this quarter, have budget approved, and want a demo next week with our security team.",
+      "expected": {
+        "lead_quality": 3,
+        "next_step": "book_demo"
+      }
+    },
+    {
+      "id": "sl-02",
+      "state": "Hi, I'm a student working on a class project about project management tools. Do you have a free version?",
+      "expected": {
+        "lead_quality": 0,
+        "next_step": "ignore"
+      },
+      "hard": [
+        "next_step"
+      ]
+    },
+    {
+      "id": "sl-03",
+      "state": "Just browsing your website. Do you send a newsletter?",
+      "expected": {
+        "lead_quality": 1,
+        "next_step": "nurture"
+      }
+    },
+    {
+      "id": "sl-04",
+      "state": "We're a 12-person startup looking for a tool like yours. We'll decide sometime in the next six months. Can you send some information?",
+      "expected": {
+        "lead_quality": 1,
+        "next_step": "nurture"
+      }
+    },
+    {
+      "id": "sl-05",
+      "state": "Our team of 80 needs to replace our current tool before our contract ends next month. Can we get a demo this week?",
+      "expected": {
+        "lead_quality": 3,
+        "next_step": "book_demo"
+      }
+    },
+    {
+      "id": "sl-06",
+      "state": "Please remove me from all of your mailing lists.",
+      "expected": {
+        "lead_quality": 0,
+        "next_step": "ignore"
+      }
+    },
+    {
+      "id": "sl-07",
+      "state": "I saw your product on a conference stage. Interesting. Maybe later this year we'll take a look.",
+      "expected": {
+        "lead_quality": 1,
+        "next_step": "nurture"
+      }
+    },
+    {
+      "id": "sl-08",
+      "state": "I'm the head of operations at a 1,000-person retailer. We're comparing three vendors and want a call with your team on Thursday.",
+      "expected": {
+        "lead_quality": 3,
+        "next_step": "book_demo"
+      }
+    },
+    {
+      "id": "sl-09",
+      "state": "Does your software run on Mac? Our team of five is thinking about trying it.",
+      "expected": {
+        "lead_quality": 2,
+        "next_step": "nurture"
+      },
+      "hard": [
+        "next_step",
+        "lead_quality"
+      ]
+    },
+    {
+      "id": "sl-10",
+      "state": "I'm selling search-ranking services. Can I get 10 minutes of your time to show you how to rank higher?",
+      "expected": {
+        "lead_quality": 0,
+        "next_step": "ignore"
+      }
+    },
+    {
+      "id": "sl-11",
+      "state": "We have a pilot planned for next quarter with a budget already set aside. Can your team present to our steering group?",
+      "expected": {
+        "lead_quality": 3,
+        "next_step": "book_demo"
+      }
+    },
+    {
+      "id": "sl-12",
+      "state": "We tried your product last year and stopped using it. Has anything changed?",
+      "expected": {
+        "lead_quality": 2,
+        "next_step": "nurture"
+      },
+      "hard": [
+        "lead_quality",
+        "next_step"
+      ]
+    }
+  ]
+}

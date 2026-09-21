@@ -1,0 +1,215 @@
+{
+  "domain": "support-tickets",
+  "description": "Customer support tickets for a software product. State is a JSON object (subject + text) to exercise JSON input.",
+  "questions": {
+    "team": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": {
+        "bug": "Something is broken",
+        "how_to": "A usage question",
+        "feature_request": "A request for a new capability",
+        "account_access": "Login, password or account access"
+      }
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this?",
+      "criteria": [
+        "Can wait",
+        "This week",
+        "Today",
+        "Right now"
+      ]
+    },
+    "angry": {
+      "type": "noul",
+      "instructions": "The customer sounds angry"
+    }
+  },
+  "cases": [
+    {
+      "id": "st-01",
+      "state": {
+        "ticket": {
+          "subject": "App crashes on launch",
+          "text": "Since the last update, the app closes as soon as I open it. I have a demo in one hour!"
+        }
+      },
+      "expected": {
+        "team": "bug",
+        "urgency": 3,
+        "angry": false
+      }
+    },
+    {
+      "id": "st-02",
+      "state": {
+        "ticket": {
+          "subject": "Change language",
+          "text": "How do I change the language of the interface to French? I could not find it in settings."
+        }
+      },
+      "expected": {
+        "team": "how_to",
+        "urgency": 0,
+        "angry": false
+      }
+    },
+    {
+      "id": "st-03",
+      "state": {
+        "ticket": {
+          "subject": "Suggestion",
+          "text": "It would be great if the dashboard could export to PDF. Not urgent, just a suggestion."
+        }
+      },
+      "expected": {
+        "team": "feature_request",
+        "urgency": 0,
+        "angry": false
+      }
+    },
+    {
+      "id": "st-04",
+      "state": {
+        "ticket": {
+          "subject": "Locked out",
+          "text": "I can't log in. It says my password is wrong but I just reset it twice. I have a client meeting starting in 10 minutes."
+        }
+      },
+      "expected": {
+        "team": "account_access",
+        "urgency": 3,
+        "angry": false
+      }
+    },
+    {
+      "id": "st-05",
+      "state": {
+        "ticket": {
+          "subject": "Lost my work AGAIN",
+          "text": "This is the THIRD time this month your app has lost my work. I am sick of it. Fix your product or I'm leaving."
+        }
+      },
+      "expected": {
+        "team": "bug",
+        "urgency": 2,
+        "angry": true
+      },
+      "hard": [
+        "urgency"
+      ]
+    },
+    {
+      "id": "st-06",
+      "state": {
+        "ticket": {
+          "subject": "API docs",
+          "text": "Where do I find the API documentation? Thanks!"
+        }
+      },
+      "expected": {
+        "team": "how_to",
+        "urgency": 0,
+        "angry": false
+      }
+    },
+    {
+      "id": "st-07",
+      "state": {
+        "ticket": {
+          "subject": "Dark mode",
+          "text": "Please add dark mode. My eyes hurt at night."
+        }
+      },
+      "expected": {
+        "team": "feature_request",
+        "urgency": 0,
+        "angry": false
+      }
+    },
+    {
+      "id": "st-08",
+      "state": {
+        "ticket": {
+          "subject": "SITE DOWN",
+          "text": "The whole site is down for our entire team. Nobody can work. Get someone on this immediately."
+        }
+      },
+      "expected": {
+        "team": "bug",
+        "urgency": 3,
+        "angry": true
+      },
+      "hard": [
+        "angry"
+      ]
+    },
+    {
+      "id": "st-09",
+      "state": {
+        "ticket": {
+          "subject": "Verification link",
+          "text": "I got a verification email but the link says it expired. Can you send a new one?"
+        }
+      },
+      "expected": {
+        "team": "account_access",
+        "urgency": 1,
+        "angry": false
+      },
+      "hard": [
+        "urgency"
+      ]
+    },
+    {
+      "id": "st-10",
+      "state": {
+        "ticket": {
+          "subject": "Thanks + question",
+          "text": "Thank you for the quick fix yesterday, everything works now! Just wondering whether there's a way to schedule reports to run automatically."
+        }
+      },
+      "expected": {
+        "team": "how_to",
+        "urgency": 0,
+        "angry": false
+      },
+      "hard": [
+        "team"
+      ]
+    },
+    {
+      "id": "st-11",
+      "state": {
+        "ticket": {
+          "subject": "Blank screen",
+          "text": "The mobile app shows a blank screen after the latest update on Android 14. Reinstalling didn't help."
+        }
+      },
+      "expected": {
+        "team": "bug",
+        "urgency": 2,
+        "angry": false
+      },
+      "hard": [
+        "urgency"
+      ]
+    },
+    {
+      "id": "st-12",
+      "state": {
+        "ticket": {
+          "subject": "2FA codes missing",
+          "text": "Two-factor codes are not arriving on my phone, so I can't sign in. I'm travelling and need to present tomorrow morning."
+        }
+      },
+      "expected": {
+        "team": "account_access",
+        "urgency": 2,
+        "angry": false
+      }
+    }
+  ]
+}

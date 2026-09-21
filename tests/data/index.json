@@ -1,0 +1,59 @@
+{
+  "total_cases": 108,
+  "domains": [
+    {
+      "file": "support-tickets.json",
+      "domain": "support-tickets",
+      "cases": 12,
+      "description": "Customer support tickets for a software product. State is a JSON object (subject + text) to exercise JSON input."
+    },
+    {
+      "file": "product-reviews.json",
+      "domain": "product-reviews",
+      "cases": 12,
+      "description": "Short customer reviews of household products."
+    },
+    {
+      "file": "agent-guardrails.json",
+      "domain": "agent-guardrails",
+      "cases": 12,
+      "description": "Plans proposed by an AI agent, judged for risk. Laya is weakest here in our tests; see the README in this folder."
+    },
+    {
+      "file": "it-incidents.json",
+      "domain": "it-incidents",
+      "cases": 12,
+      "description": "Monitoring alerts and incident reports for an online service."
+    },
+    {
+      "file": "content-moderation.json",
+      "domain": "content-moderation",
+      "cases": 12,
+      "description": "Comments on a public blog, to be published, held for a moderator, or removed."
+    },
+    {
+      "file": "email-triage.json",
+      "domain": "email-triage",
+      "cases": 12,
+      "description": "Workplace emails, sorted by what the recipient should do."
+    },
+    {
+      "file": "delivery-exceptions.json",
+      "domain": "delivery-exceptions",
+      "cases": 12,
+      "description": "Parcel delivery problems, sorted by what customer support should do."
+    },
+    {
+      "file": "sales-leads.json",
+      "domain": "sales-leads",
+      "cases": 12,
+      "description": "Inbound messages to a software company's sales inbox."
+    },
+    {
+      "file": "patient-messages.json",
+      "domain": "patient-messages",
+      "cases": 12,
+      "description": "Portal messages to a clinic, routed by urgency. Synthetic text for testing routing only; not medical advice."
+    }
+  ]
+}

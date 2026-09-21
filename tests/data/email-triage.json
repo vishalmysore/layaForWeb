@@ -1,0 +1,164 @@
+{
+  "domain": "email-triage",
+  "description": "Workplace emails, sorted by what the recipient should do.",
+  "questions": {
+    "action": {
+      "type": "choice",
+      "instructions": "What should the recipient do with this email?",
+      "criteria": {
+        "reply_now": "Reply today",
+        "reply_later": "Reply within the week",
+        "archive": "No reply needed",
+        "delegate": "Forward it to someone else"
+      }
+    },
+    "needs_reply": {
+      "type": "noul",
+      "instructions": "The sender expects a reply"
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this email?",
+      "criteria": [
+        "Low",
+        "Normal",
+        "High",
+        "Urgent"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "em-01",
+      "state": "Hi, can you confirm you'll be at tomorrow's 9am planning meeting? We need a headcount by 5pm today.",
+      "expected": {
+        "action": "reply_now",
+        "needs_reply": true,
+        "urgency": 3
+      },
+      "hard": [
+        "urgency"
+      ]
+    },
+    {
+      "id": "em-02",
+      "state": "Newsletter: Ten tips for better spreadsheets. You can unsubscribe at any time.",
+      "expected": {
+        "action": "archive",
+        "needs_reply": false,
+        "urgency": 0
+      }
+    },
+    {
+      "id": "em-03",
+      "state": "Your package has shipped. Tracking number 1Z999AA10123456784. No action needed.",
+      "expected": {
+        "action": "archive",
+        "needs_reply": false,
+        "urgency": 0
+      }
+    },
+    {
+      "id": "em-04",
+      "state": "Hi, whenever you have time next week, could we talk about the roadmap for next quarter?",
+      "expected": {
+        "action": "reply_later",
+        "needs_reply": true,
+        "urgency": 1
+      }
+    },
+    {
+      "id": "em-05",
+      "state": "Hi, my badge stopped working at the office entrance. Who do I contact about this?",
+      "expected": {
+        "action": "delegate",
+        "needs_reply": true,
+        "urgency": 1
+      }
+    },
+    {
+      "id": "em-06",
+      "state": "Reminder: the quarterly team survey closes on Friday.",
+      "expected": {
+        "action": "archive",
+        "needs_reply": false,
+        "urgency": 0
+      },
+      "hard": [
+        "action",
+        "urgency"
+      ]
+    },
+    {
+      "id": "em-07",
+      "state": "URGENT: the server room is flooding, please call me right now.",
+      "expected": {
+        "action": "reply_now",
+        "needs_reply": true,
+        "urgency": 3
+      }
+    },
+    {
+      "id": "em-08",
+      "state": "Thanks for your help yesterday! Really appreciated.",
+      "expected": {
+        "action": "archive",
+        "needs_reply": false,
+        "urgency": 0
+      },
+      "hard": [
+        "action"
+      ]
+    },
+    {
+      "id": "em-09",
+      "state": "Could you review the attached design document and send comments by Thursday?",
+      "expected": {
+        "action": "reply_later",
+        "needs_reply": true,
+        "urgency": 1
+      },
+      "hard": [
+        "urgency"
+      ]
+    },
+    {
+      "id": "em-10",
+      "state": "Meeting invitation: team lunch on Friday at noon. Please RSVP.",
+      "expected": {
+        "action": "reply_later",
+        "needs_reply": true,
+        "urgency": 1
+      },
+      "hard": [
+        "action",
+        "urgency"
+      ]
+    },
+    {
+      "id": "em-11",
+      "state": "I would like to speak to your manager about how my request was handled.",
+      "expected": {
+        "action": "reply_now",
+        "needs_reply": true,
+        "urgency": 2
+      },
+      "hard": [
+        "action",
+        "urgency"
+      ]
+    },
+    {
+      "id": "em-12",
+      "state": "Automated notice: your password will expire in 14 days.",
+      "expected": {
+        "action": "archive",
+        "needs_reply": false,
+        "urgency": 0
+      },
+      "hard": [
+        "action"
+      ]
+    }
+  ]
+}

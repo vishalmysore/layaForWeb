@@ -128,6 +128,10 @@ node scripts/prepare_site.mjs --external-model-base https://huggingface.co/yourn
 
 Any static host with CORS enabled works for the model files: open the page with `?modelBase=https://example.com/laya/model/`.
 
+## More test data
+
+`tests/data/` holds 108 labeled cases in 9 domains (support tickets, reviews, agent guardrails, incidents, moderation, email, deliveries, sales leads, clinic messages). They are not in the demo's Example dropdown; the page links to the folder instead. `python scripts/eval_dataset.py` scores them against the original PyTorch model, and `tests/data/README.md` explains the format and the first results.
+
 ## Use it in your own page
 
 `web/laya-core.js` exports the `Laya` class and the pieces it is built from. It mirrors the Python `laya` package: it builds the token sequence for each question, runs the ONNX graph, applies the calibration temperature and softmax, and formats the choice, score or yes/no result. `tests/seq_parity.mjs` checks that it builds identical token ids to Python on 24 cases, including emoji, right-to-left text, special tokens in the input, JSON state and very long input.
@@ -149,7 +153,9 @@ Any static host with CORS enabled works for the model files: open the page with 
 | `scripts/upload_to_hf.py` | upload `build/model` to a Hugging Face model repo |
 | `scripts/gen_fixtures.py` | regenerate test fixtures from the PyTorch model |
 | `scripts/prepare_site.mjs` | assemble `dist/` from `web/`, npm packages and the model |
+| `scripts/eval_dataset.py` | score the labeled cases in `tests/data` against the original PyTorch model |
 | `tests/` | token sequence parity test and headless browser smoke test |
+| `tests/data/` | 108 labeled test cases in 9 domains, with their own README |
 | `serve.py` | local static server (`--no-coi` mimics GitHub Pages) |
 | `.github/workflows/deploy.yml` | build, test and deploy workflow |
 | `LICENSE`, `NOTICE.md`, `licenses/` | license text, notices and third-party license texts |

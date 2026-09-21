@@ -1,0 +1,152 @@
+{
+  "domain": "content-moderation",
+  "description": "Comments on a public blog, to be published, held for a moderator, or removed.",
+  "questions": {
+    "verdict": {
+      "type": "choice",
+      "instructions": "What should happen to this comment?",
+      "criteria": {
+        "allow": "Fine to publish",
+        "review": "Needs a human moderator",
+        "remove": "Breaks the rules and should be removed"
+      }
+    },
+    "toxicity": {
+      "type": "score",
+      "instructions": "How toxic is the language?",
+      "criteria": [
+        "None",
+        "Mild",
+        "Strong",
+        "Severe"
+      ]
+    },
+    "spam": {
+      "type": "noul",
+      "instructions": "The comment is spam or an advertisement"
+    }
+  },
+  "cases": [
+    {
+      "id": "cm-01",
+      "state": "Great article, thanks for sharing the details on the setup!",
+      "expected": {
+        "verdict": "allow",
+        "toxicity": 0,
+        "spam": false
+      }
+    },
+    {
+      "id": "cm-02",
+      "state": "BUY CHEAP WATCHES NOW!!! Click here www.totally-legit-watches.example 90% off",
+      "expected": {
+        "verdict": "remove",
+        "toxicity": 0,
+        "spam": true
+      }
+    },
+    {
+      "id": "cm-03",
+      "state": "You are a complete idiot and everyone here knows it. Shut up.",
+      "expected": {
+        "verdict": "remove",
+        "toxicity": 2,
+        "spam": false
+      }
+    },
+    {
+      "id": "cm-04",
+      "state": "I disagree with your conclusion, but the data in the second table is interesting.",
+      "expected": {
+        "verdict": "allow",
+        "toxicity": 0,
+        "spam": false
+      }
+    },
+    {
+      "id": "cm-05",
+      "state": "Anyone who believes this is too stupid to be alive.",
+      "expected": {
+        "verdict": "remove",
+        "toxicity": 2,
+        "spam": false
+      },
+      "hard": [
+        "verdict"
+      ]
+    },
+    {
+      "id": "cm-06",
+      "state": "Thanks, this helped me fix my build.",
+      "expected": {
+        "verdict": "allow",
+        "toxicity": 0,
+        "spam": false
+      }
+    },
+    {
+      "id": "cm-07",
+      "state": "Check out my channel for more tutorials like this: video.example/xyz, please subscribe!",
+      "expected": {
+        "verdict": "remove",
+        "toxicity": 0,
+        "spam": true
+      },
+      "hard": [
+        "verdict"
+      ]
+    },
+    {
+      "id": "cm-08",
+      "state": "I hope you and your whole family get what's coming to you.",
+      "expected": {
+        "verdict": "remove",
+        "toxicity": 3,
+        "spam": false
+      },
+      "hard": [
+        "toxicity"
+      ]
+    },
+    {
+      "id": "cm-09",
+      "state": "This is the worst take I've read this year, honestly embarrassing.",
+      "expected": {
+        "verdict": "allow",
+        "toxicity": 1,
+        "spam": false
+      },
+      "hard": [
+        "verdict",
+        "toxicity"
+      ]
+    },
+    {
+      "id": "cm-10",
+      "state": "Win a free phone!! Just click the link and enter your details.",
+      "expected": {
+        "verdict": "remove",
+        "toxicity": 0,
+        "spam": true
+      }
+    },
+    {
+      "id": "cm-11",
+      "state": "Could someone explain how to reset the router? Mine keeps dropping the connection.",
+      "expected": {
+        "verdict": "allow",
+        "toxicity": 0,
+        "spam": false
+      }
+    },
+    {
+      "id": "cm-12",
+      "state": "You people are disgusting. Go back to where you came from.",
+      "expected": {
+        "verdict": "remove",
+        "toxicity": 3,
+        "spam": false
+      }
+    }
+  ]
+}

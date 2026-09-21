@@ -1,0 +1,156 @@
+{
+  "domain": "it-incidents",
+  "description": "Monitoring alerts and incident reports for an online service.",
+  "questions": {
+    "severity": {
+      "type": "score",
+      "instructions": "How severe is this incident?",
+      "criteria": [
+        "Minor",
+        "Moderate",
+        "Major",
+        "Critical"
+      ]
+    },
+    "owner": {
+      "type": "choice",
+      "instructions": "Which team should own it?",
+      "criteria": {
+        "network": "Networking and DNS",
+        "database": "Databases",
+        "application": "Application developers",
+        "security": "Security team"
+      }
+    },
+    "customer_impact": {
+      "type": "noul",
+      "instructions": "Customers are affected right now"
+    }
+  },
+  "cases": [
+    {
+      "id": "it-01",
+      "state": "Alert: primary database CPU at 100% for 20 minutes. Search and login return 500 errors for all users.",
+      "expected": {
+        "severity": 3,
+        "owner": "database",
+        "customer_impact": true
+      }
+    },
+    {
+      "id": "it-02",
+      "state": "Alert: disk usage on the log server at 71%. No services are affected.",
+      "expected": {
+        "severity": 0,
+        "owner": "application",
+        "customer_impact": false
+      },
+      "hard": [
+        "owner"
+      ]
+    },
+    {
+      "id": "it-03",
+      "state": "Multiple failed SSH login attempts from an unknown IP on the bastion host: 4,000 attempts in ten minutes. No successful logins so far.",
+      "expected": {
+        "severity": 2,
+        "owner": "security",
+        "customer_impact": false
+      }
+    },
+    {
+      "id": "it-04",
+      "state": "Packet loss of 30% between the two data centers since 09:12. Replication is lagging.",
+      "expected": {
+        "severity": 2,
+        "owner": "network",
+        "customer_impact": true
+      },
+      "hard": [
+        "customer_impact"
+      ]
+    },
+    {
+      "id": "it-05",
+      "state": "A new release caused the settings page to show a wrong label. Cosmetic only.",
+      "expected": {
+        "severity": 0,
+        "owner": "application",
+        "customer_impact": false
+      }
+    },
+    {
+      "id": "it-06",
+      "state": "Unusual outbound traffic from a database server to an external IP. Credentials for a service account may have leaked.",
+      "expected": {
+        "severity": 3,
+        "owner": "security",
+        "customer_impact": false
+      },
+      "hard": [
+        "customer_impact"
+      ]
+    },
+    {
+      "id": "it-07",
+      "state": "The nightly database backup job failed for the second night in a row.",
+      "expected": {
+        "severity": 1,
+        "owner": "database",
+        "customer_impact": false
+      }
+    },
+    {
+      "id": "it-08",
+      "state": "DNS resolution is failing for our main domain. The website and API are unreachable worldwide.",
+      "expected": {
+        "severity": 3,
+        "owner": "network",
+        "customer_impact": true
+      }
+    },
+    {
+      "id": "it-09",
+      "state": "Memory leak in the recommendation service. It restarts every six hours; users see no interruption.",
+      "expected": {
+        "severity": 1,
+        "owner": "application",
+        "customer_impact": false
+      }
+    },
+    {
+      "id": "it-10",
+      "state": "The TLS certificate for the API gateway expires in 30 days.",
+      "expected": {
+        "severity": 0,
+        "owner": "network",
+        "customer_impact": false
+      },
+      "hard": [
+        "owner",
+        "severity"
+      ]
+    },
+    {
+      "id": "it-11",
+      "state": "The login page returns errors for about 5% of users after the last deploy.",
+      "expected": {
+        "severity": 2,
+        "owner": "application",
+        "customer_impact": true
+      }
+    },
+    {
+      "id": "it-12",
+      "state": "Query latency on the primary database doubled after a schema change. Some pages are slow but working.",
+      "expected": {
+        "severity": 1,
+        "owner": "database",
+        "customer_impact": true
+      },
+      "hard": [
+        "severity"
+      ]
+    }
+  ]
+}
