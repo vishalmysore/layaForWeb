@@ -40,6 +40,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Cache keys cannot contain commas, so turn q8e8,q4e8 into q8e8-q4e8.
+      - name: Cache key for the variant list
+        run: echo "VARIANTS_KEY=${VARIANTS//,/-}" >> "$GITHUB_ENV"
+
       # The converted model is rebuilt only when the conversion code, its pinned dependencies or the variant list change.
       - name: Restore converted model
         id: model-cache
@@ -49,7 +53,7 @@ jobs:
             build/model
             build/verify_report.md
             build/verify_report.json
-          key: laya-model-${{ hashFiles('scripts/build_model.py', 'requirements-build.txt') }}-${{ env.VARIANTS }}
+          key: laya-model-${{ hashFiles('scripts/build_model.py', 'requirements-build.txt') }}-${{ env.VARIANTS_KEY }}
 
       - name: Install Python dependencies
         if: steps.model-cache.outputs.cache-hit != 'true'
