@@ -34,7 +34,16 @@ if (external) {
 } else {
   fs.cpSync(model, path.join(dist, "model"), { recursive: true });
 }
-fs.copyFileSync(path.join(root, "NOTICE.md"), path.join(dist, "NOTICE.md"));
+// License texts and notices travel with every copy of the site (Apache-2.0 and MIT both require it).
+for (const f of ["NOTICE.md", "LICENSE"]) {
+  need(path.join(root, f), `${f} is missing from the repository root.`);
+  fs.copyFileSync(path.join(root, f), path.join(dist, f));
+}
+// Browsers download .md and extension-less files instead of showing them, so also publish plain-text copies to link to.
+fs.copyFileSync(path.join(root, "NOTICE.md"), path.join(dist, "NOTICE.txt"));
+fs.copyFileSync(path.join(root, "LICENSE"), path.join(dist, "LICENSE.txt"));
+need(path.join(root, "licenses"), "The licenses/ folder is missing from the repository root.");
+fs.cpSync(path.join(root, "licenses"), path.join(dist, "licenses"), { recursive: true });
 fs.writeFileSync(path.join(dist, ".nojekyll"), "");
 
 let total = 0, biggest = 0;

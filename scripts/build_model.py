@@ -42,11 +42,16 @@ tags: [onnx, onnxruntime-web, browser, decision-model, quantized]
 ---
 # Laya (English) converted for the browser
 
-Quantized ONNX conversion of the English checkpoint of [convaiinnovations/laya](https://huggingface.co/convaiinnovations/laya)
-(Apache-2.0), made for ONNX Runtime Web. Unofficial; not affiliated with ConvAI Innovations.
+This is a modified copy of the English checkpoint of [convaiinnovations/laya](https://huggingface.co/convaiinnovations/laya)
+(Apache-2.0, Copyright ConvAI Innovations), made for ONNX Runtime Web. It is unofficial and not affiliated with
+ConvAI Innovations. Laya itself is built on ModernBERT-large by Answer.AI and LightOn (Apache-2.0).
 
-The weight files are split into parts (`*.onnx.data.partNNN`) and listed in `manifest.json`; the demo page reassembles them.
-Build scripts: the `layaForWeb` repository that produced this folder.
+**Changes from the original:** exported to ONNX; weights quantized (weight-only int8 or int4, int8 embeddings), so
+outputs differ slightly from the original PyTorch model; weight files split into parts (`*.onnx.data.partNNN`, listed
+in `manifest.json`, which the demo page reassembles).
+
+Licensed under the Apache License, Version 2.0. See `LICENSE` and `NOTICE.md` in this folder.
+Build scripts and demo: the `layaForWeb` repository that produced this folder.
 """
 
 
@@ -261,6 +266,9 @@ def stage_package(out, variants):
         log(f"{v}: {size / 1e6:.0f} MB in {len(parts)} parts")
     (model_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
     (model_dir / "README.md").write_text(MODEL_CARD)
+    # Apache-2.0 section 4: recipients of the modified weights get a copy of the license and the notices.
+    shutil.copy(ROOT / "LICENSE", model_dir / "LICENSE")
+    shutil.copy(ROOT / "NOTICE.md", model_dir / "NOTICE.md")
     total = sum(p.stat().st_size for p in model_dir.iterdir())
     log(f"model folder ready: {model_dir} ({total / 1e6:.0f} MB)")
 

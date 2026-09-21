@@ -1,5 +1,9 @@
 // Laya (English) in the browser: sequence builder, ONNX Runtime Web inference, calibrated outputs.
 // This is a line-by-line port of laya/common.py (build_sequence) and laya/agent.py (system_one).
+//
+// Derived from Laya by ConvAI Innovations (https://github.com/NandhaKishorM/laya), licensed under the
+// Apache License, Version 2.0 (see LICENSE and NOTICE.md). Changed: ported from Python to JavaScript and
+// adapted to run the exported ONNX graph with ONNX Runtime Web.
 
 const MASK = "[MASK]";
 const QTYPES = { choice: 0, score: 1, noul: 2 };
