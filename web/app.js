@@ -115,6 +115,8 @@ async function loadModel() {
     // ONNX Runtime's WebGPU MatMulNBits kernel only supports 2- and 4-bit weights, so the 8-bit build cannot create a WebGPU session.
     const key = $("variant").value;
     const noWebGPU = key === "q8e8";
+    let backendNote = "";
+    if (want === "auto" && gpu && noWebGPU) backendNote = "Auto chose WASM: this build cannot run on WebGPU. Pick the int4 build to use WebGPU.";
     if (want === "auto") want = gpu && !noWebGPU ? "webgpu" : "wasm";
     if (want === "webgpu" && noWebGPU) throw new Error("The int8 block-wise build cannot run on WebGPU (its 8-bit operator has no WebGPU kernel; only 2- and 4-bit are supported). Choose the int4 build for WebGPU, or use WASM for this build.");
     if (want === "webgpu" && !gpu) throw new Error("WebGPU is not available in this browser. Choose WASM or use a recent Chrome/Edge.");
@@ -150,6 +152,7 @@ async function loadModel() {
     setStatus(`Ready. Download ${(dlMs / 1000).toFixed(1)} s${fetchParts.lastFromCache ? ` (${fetchParts.lastFromCache} of ${v.data.parts.length} parts from browser cache)` : ""}, session init ${(initMs / 1000).toFixed(1)} s, warm-up call ${warmMs.toFixed(0)} ms.`, "");
     badge(want === "webgpu" ? "WebGPU" : "WASM" + (ort.env.wasm.numThreads > 1 ? ` · ${ort.env.wasm.numThreads} threads` : " · 1 thread"), true);
     badge($("variant").selectedOptions[0].textContent.split(" (")[0]);
+    if (backendNote) badge(backendNote);
     badge("cross-origin isolated: " + (self.crossOriginIsolated ? "yes" : "no"));
     $("runBtn").disabled = false; $("verifyBtn").disabled = false;
   } catch (e) {

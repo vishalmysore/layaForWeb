@@ -137,7 +137,7 @@ Any static host with CORS enabled works for the model files: open the page with 
 ## Backends
 
 - **WASM (default)**: runs on the CPU and is the verified reference. A three-question call took about 2 to 5 seconds on a 2-core machine; modern laptops are faster. The page enables multithreading on GitHub Pages through a small service worker (`web/coi-sw.js`) that adds the required COOP/COEP headers.
-- **WebGPU (experimental)**: works with the int4 build (`q4e8`) only. ONNX Runtime's WebGPU `MatMulNBits` kernel supports 2- and 4-bit weights, so the default 8-bit build (`q8e8`) cannot create a WebGPU session and always runs on WASM. The page includes a **Run comparison** button that checks WebGPU output against the PyTorch reference on your GPU. WebGPU has not been verified on real GPU hardware; on a software adapter the `qdq8` build gave incorrect probabilities.
+- **WebGPU (experimental)**: works with the int4 build (`q4e8`) only. ONNX Runtime's WebGPU `MatMulNBits` kernel supports 2- and 4-bit weights, so the default 8-bit build (`q8e8`) cannot create a WebGPU session and always runs on WASM. On one desktop GPU, the page's **Run comparison** check gave the same summary for `q4e8` on WebGPU as on WASM (10 of 12 top answers matching PyTorch, largest probability difference 0.274), so the gap to the original model comes from int4 quantization and not from WebGPU. Run the check on your own GPU before relying on it.
 
 ## Repository layout
 
