@@ -89,7 +89,7 @@ This is the demo that made me want a side-by-side. An AI agent plans to run a bu
 
 ![Real screenshot of the Laya browser demo: an agent plan to delete rows in production; Laya says safe-without-approval at 82.8%, destructive at 64.9%, needs-human at 32.7%, and the page would send all three to a person](images/laya-live-demo-agent-guardrail.png)
 
-*Real screenshot. Laya says "yes, safe" at 82.8% for the first wording. All three answers fall below the 0.90 confidence threshold, so the page would send each one to a person.*
+*Real screenshot. Two of Laya's three answers point the wrong way: it says "yes, safe to run without approval" at 82.8%, and it says no human needs to approve the command (67.3% "no"). Only "destructive" (64.9% yes) is right. What saves this run is the threshold: every confidence is under 0.90, so the page sends all three to a person. At a threshold of 0.80 it would have approved the delete automatically.*
 
 Now the same idea in Jev's own playground. The input is not identical (Jev's preset gives it a row count and explicit "true when" and "false when" descriptions), but the situation is the same: a delete with no backup, and a question about whether it is safe to run without a human.
 
