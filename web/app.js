@@ -112,7 +112,11 @@ async function loadModel() {
     const v = MANIFEST.variants[$("variant").value];
     let want = $("backend").value;
     const gpu = await hasWebGPU();
-    if (want === "auto") want = gpu ? "webgpu" : "wasm";
+    // ONNX Runtime's WebGPU MatMulNBits kernel only supports 2- and 4-bit weights, so the 8-bit build cannot create a WebGPU session.
+    const key = $("variant").value;
+    const noWebGPU = key === "q8e8";
+    if (want === "auto") want = gpu && !noWebGPU ? "webgpu" : "wasm";
+    if (want === "webgpu" && noWebGPU) throw new Error("The int8 block-wise build cannot run on WebGPU (its 8-bit operator has no WebGPU kernel; only 2- and 4-bit are supported). Choose the int4 build for WebGPU, or use WASM for this build.");
     if (want === "webgpu" && !gpu) throw new Error("WebGPU is not available in this browser. Choose WASM or use a recent Chrome/Edge.");
 
     ort.env.wasm.wasmPaths = new URL("./vendor/", import.meta.url).href;
