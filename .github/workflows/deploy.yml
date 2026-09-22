@@ -21,6 +21,10 @@ concurrency:
 env:
   VARIANTS: ${{ inputs.variants || 'q8e8,q4e8' }}
   HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}
+  # Optional second checkpoint (e.g. convaiinnovations/laya-typed-decisions), built and uploaded by the
+  # separate deploy-typed.yml workflow. This workflow never builds it -- it only links to it if present,
+  # so a Pages deploy here never waits on or fails because of the typed-decisions build.
+  HF_MODEL_REPO_TYPED: ${{ vars.HF_MODEL_REPO_TYPED }}
 
 jobs:
   build:
@@ -96,11 +100,10 @@ jobs:
 
       - name: Assemble the site to deploy
         run: |
-          if [ -n "$HF_MODEL_REPO" ]; then
-            node scripts/prepare_site.mjs --external-model-base "https://huggingface.co/${HF_MODEL_REPO}/resolve/main/"
-          else
-            node scripts/prepare_site.mjs
-          fi
+          ARGS=()
+          if [ -n "$HF_MODEL_REPO" ]; then ARGS+=(--external-model-base "https://huggingface.co/${HF_MODEL_REPO}/resolve/main/"); fi
+          if [ -n "$HF_MODEL_REPO_TYPED" ]; then ARGS+=(--external-model-base-typed "https://huggingface.co/${HF_MODEL_REPO_TYPED}/resolve/main/"); fi
+          node scripts/prepare_site.mjs "${ARGS[@]}"
 
       - uses: actions/configure-pages@v5
 

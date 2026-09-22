@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """Compare every built ONNX variant with the original PyTorch model on 48 typed questions.
 
-    python scripts/verify_model.py
+    python scripts/verify_model.py                # checks build/
+    python scripts/verify_model.py --out build-typed
+
+Works against any checkpoint build_model.py produced, using that checkpoint's own sequence-length
+limits from <out>/en/rl_agent_config.json (see build_model.py for why this is read dynamically
+rather than assumed).
 
 The exported fp32 graph must match PyTorch almost exactly. Quantized builds are allowed to drift a little;
 the thresholds below fail the build if they drift more than we measured when this was written.
 """
-import json, os, sys
+import argparse, json, os, sys
 from pathlib import Path
 import numpy as np, torch, onnxruntime as ort
 import laya
 from laya.common import build_sequence, collate_items, QTYPES, temp_bucket
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "build"
 # (min top-answer agreement, max mean of the largest per-question probability difference)
 LIMITS = {"fp32": (1.00, 0.002), "qdq8": (0.93, 0.03), "q8e8": (0.93, 0.03), "q4e8": (0.90, 0.12)}
 FILES = {"fp32": "laya_fp32.onnx", "qdq8": "laya_qdq8.onnx", "q8e8": "laya_q8e8.onnx", "q4e8": "laya_q4e8.onnx"}
@@ -41,8 +45,15 @@ QDEFS = [
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=str(ROOT / "build"), help="the --out directory build_model.py wrote to (default: %(default)s)")
+    a = ap.parse_args()
+    OUT = Path(a.out)
+
     torch.set_num_threads(os.cpu_count() or 1)
     agent = laya.load(str(OUT / "en"), device="cpu")
+    cfg = json.loads((OUT / "en" / "rl_agent_config.json").read_text())
+    max_len, head_max_len = int(cfg.get("max_len", 512)), int(cfg.get("head_max_len", 192))
     variants = [v for v in FILES if (OUT / "onnx" / FILES[v]).exists()]
     sessions = {v: ort.InferenceSession(str(OUT / "onnx" / FILES[v]), providers=["CPUExecutionProvider"]) for v in variants}
     stats = {v: {"same": [], "dp": [], "dscore": []} for v in variants}
@@ -52,7 +63,7 @@ def main():
         for d in QDEFS:
             q = agent._to_internal(d)
             iq.append(q)
-            seq, mk = build_sequence(agent.tok, state, q, 512, 192)
+            seq, mk = build_sequence(agent.tok, state, q, max_len, head_max_len)
             items.append({"ids": seq, "markers": mk, "qtype": QTYPES[q["t"]]})
         b = collate_items([items], agent.tok.pad_token_id)
         with torch.no_grad():

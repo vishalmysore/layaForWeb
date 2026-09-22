@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""Convert the English Laya checkpoint into browser-sized ONNX models.
+"""Convert a Laya checkpoint into browser-sized ONNX models.
 
-    python scripts/build_model.py                      # builds q8e8 and q4e8
+    python scripts/build_model.py                      # convaiinnovations/laya -> build/, q8e8 and q4e8
     python scripts/build_model.py --variants qdq8      # only the closest-to-original build
+    python scripts/build_model.py --repo convaiinnovations/laya-typed-decisions --out build-typed
+
+This script is generic across the Laya checkpoint family: it reads the sequence-length limits from
+the checkpoint's own rl_agent_config.json rather than assuming the general English checkpoint's
+512/192, so the same command converts a fine-tuned checkpoint such as laya-typed-decisions (which
+uses a longer 1024-token context) without changes. --repo and --out keep two checkpoints' builds
+completely separate on disk, so converting one never touches or invalidates the other's cache.
 
 What it does
-  1. Downloads the English checkpoint (repo root of convaiinnovations/laya on Hugging Face).
+  1. Downloads the checkpoint (repo root of --repo on Hugging Face).
   2. Exports the whole network (ModernBERT-large encoder + typed decision heads) to one ONNX
      graph with dynamic batch and sequence length. Softmax, temperature and the
      choice/score/noul post-processing stay in JavaScript, exactly like laya/agent.py.
@@ -17,15 +24,15 @@ What it does
      can be hosted on services with per-file size limits (GitHub Pages, git repos, CDNs).
 
 Outputs (all under --out, default build/):
-  build/en/        downloaded checkpoint
-  build/onnx/      full, unsplit ONNX files (used by verify_model.py)
-  build/model/     what the website serves: graph files, weight parts, tokenizer, config, manifest
+  <out>/en/        downloaded checkpoint
+  <out>/onnx/      full, unsplit ONNX files (used by verify_model.py)
+  <out>/model/     what the website serves: graph files, weight parts, tokenizer, config, manifest
 """
 import argparse, gc, hashlib, json, os, shutil, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REPO = "convaiinnovations/laya"
+DEFAULT_REPO = "convaiinnovations/laya"
 CHUNK = 24 * 1024 * 1024
 LABELS = {
     "qdq8": "int8 weights, per-channel",
@@ -34,17 +41,22 @@ LABELS = {
 }
 
 
-MODEL_CARD = """---
+def model_card(repo):
+    typed = "typed-decisions" in repo
+    what = ("fine-tuned specifically for typed-decision workflows (see its own model card for which ones)"
+            if typed else "a general-purpose checkpoint")
+    return f"""---
 license: apache-2.0
-base_model: convaiinnovations/laya
+base_model: {repo}
 library_name: onnx
 tags: [onnx, onnxruntime-web, browser, decision-model, quantized]
 ---
-# Laya (English) converted for the browser
+# {repo.split('/')[-1]} converted for the browser
 
-This is a modified copy of the English checkpoint of [convaiinnovations/laya](https://huggingface.co/convaiinnovations/laya)
+This is a modified copy of the checkpoint at [{repo}](https://huggingface.co/{repo})
 (Apache-2.0, Copyright ConvAI Innovations), made for ONNX Runtime Web. It is unofficial and not affiliated with
-ConvAI Innovations. Laya itself is built on ModernBERT-large by Answer.AI and LightOn (Apache-2.0).
+ConvAI Innovations. This checkpoint is {what}. Laya itself is built on ModernBERT-large by Answer.AI and LightOn
+(Apache-2.0).
 
 **Changes from the original:** exported to ONNX; weights quantized (weight-only int8 or int4, int8 embeddings), so
 outputs differ slightly from the original PyTorch model; weight files split into parts (`*.onnx.data.partNNN`, listed
@@ -60,14 +72,14 @@ def log(msg):
 
 
 # --------------------------------------------------------------------------- stage: download
-def stage_download(out):
+def stage_download(out, repo):
     from huggingface_hub import snapshot_download
     dst = out / "en"
     patterns = ["model.safetensors", "rl_agent_config.json", "encoder/*", "tokenizer/*"]
     if (dst / "model.safetensors").exists() and (dst / "rl_agent_config.json").exists():
         log(f"checkpoint already in {dst}")
         return
-    snapshot_download(REPO, local_dir=str(dst), allow_patterns=patterns)
+    snapshot_download(repo, local_dir=str(dst), allow_patterns=patterns)
     log(f"downloaded checkpoint to {dst}")
 
 
@@ -82,6 +94,13 @@ def stage_export(out):
     torch.backends.mha.set_fastpath_enabled(False)  # keep nn.TransformerEncoderLayer exportable
     onnx_dir = out / "onnx"
     onnx_dir.mkdir(parents=True, exist_ok=True)
+
+    # Read this checkpoint's own limits instead of assuming the general English checkpoint's
+    # 512/192 -- laya-typed-decisions, for example, uses a longer 1024-token context.
+    cfg = json.loads((out / "en" / "rl_agent_config.json").read_text())
+    max_len = int(cfg.get("max_len", 512))
+    head_max_len = int(cfg.get("head_max_len", 192))
+    log(f"sequence limits from rl_agent_config.json: max_len={max_len} head_max_len={head_max_len}")
 
     agent = laya.load(str(out / "en"), device="cpu")
     model = agent.model.eval().float()
@@ -103,13 +122,13 @@ def stage_export(out):
     ]
     items = []
     for q in qs:
-        seq, mk = build_sequence(agent.tok, state, q, 512, 192)
+        seq, mk = build_sequence(agent.tok, state, q, max_len, head_max_len)
         items.append({"ids": seq, "markers": mk, "qtype": QTYPES[q["t"]]})
     b = collate_items([items], agent.tok.pad_token_id)
     args = (b["input_ids"], b["attention_mask"], b["marker_pos"], b["marker_mask"], b["qtype"])
 
     # one shared Dim object per axis name, so the exporter treats them as the same dimension
-    batch, seq, kk = Dim("batch", min=1, max=64), Dim("seq", min=8, max=512), Dim("k", min=2, max=255)
+    batch, seq, kk = Dim("batch", min=1, max=64), Dim("seq", min=8, max=max_len), Dim("k", min=2, max=255)
     dyn = {"input_ids": {0: batch, 1: seq}, "attention_mask": {0: batch, 1: seq},
            "marker_pos": {0: batch, 1: kk}, "marker_mask": {0: batch, 1: kk}, "qtype": {0: batch}}
     log("exporting to ONNX (torch.export path)...")
@@ -236,7 +255,7 @@ def stage_q8e8(out):
 
 
 # --------------------------------------------------------------------------- stage: package
-def stage_package(out, variants):
+def stage_package(out, variants, repo):
     onnx_dir, model_dir, en = out / "onnx", out / "model", out / "en"
     if model_dir.exists():
         shutil.rmtree(model_dir)
@@ -244,7 +263,7 @@ def stage_package(out, variants):
     shutil.copy(en / "tokenizer" / "tokenizer.json", model_dir / "tokenizer.json")
     shutil.copy(en / "tokenizer" / "tokenizer_config.json", model_dir / "tokenizer_config.json")
     shutil.copy(en / "rl_agent_config.json", model_dir / "rl_agent_config.json")
-    manifest = {"version": 1, "source": REPO, "chunk_bytes": CHUNK, "variants": {}}
+    manifest = {"version": 1, "source": repo, "chunk_bytes": CHUNK, "variants": {}}
     for v in variants:
         graph = onnx_dir / f"laya_{v}.onnx"
         data = onnx_dir / f"laya_{v}.onnx.data"
@@ -265,7 +284,7 @@ def stage_package(out, variants):
                                    "data": {"name": data.name, "size": size, "sha256": h.hexdigest(), "parts": parts}}
         log(f"{v}: {size / 1e6:.0f} MB in {len(parts)} parts")
     (model_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
-    (model_dir / "README.md").write_text(MODEL_CARD)
+    (model_dir / "README.md").write_text(model_card(repo))
     # Apache-2.0 section 4: recipients of the modified weights get a copy of the license and the notices.
     shutil.copy(ROOT / "LICENSE", model_dir / "LICENSE")
     shutil.copy(ROOT / "NOTICE.md", model_dir / "NOTICE.md")
@@ -276,8 +295,9 @@ def stage_package(out, variants):
 # --------------------------------------------------------------------------- driver
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--repo", default=DEFAULT_REPO, help="Hugging Face checkpoint to convert (default: %(default)s)")
     ap.add_argument("--variants", default="q8e8,q4e8")
-    ap.add_argument("--out", default=str(ROOT / "build"))
+    ap.add_argument("--out", default=str(ROOT / "build"), help="output directory; use a different one per --repo, e.g. build-typed for laya-typed-decisions")
     ap.add_argument("--stage", choices=["download", "export", "qdq8", "q8e8", "q4e8", "package"], help=argparse.SUPPRESS)
     a = ap.parse_args()
     out = Path(a.out)
@@ -287,10 +307,13 @@ def main():
             sys.exit(f"unknown variant {v!r}; choose from {', '.join(LABELS)}")
     if a.stage:  # child process: run exactly one stage
         if a.stage == "package":
-            stage_package(out, variants)
+            stage_package(out, variants, a.repo)
+        elif a.stage == "download":
+            stage_download(out, a.repo)
         else:
-            {"download": stage_download, "export": stage_export, "qdq8": stage_qdq8, "q8e8": stage_q8e8, "q4e8": stage_q4e8}[a.stage](out)
+            {"export": stage_export, "qdq8": stage_qdq8, "q8e8": stage_q8e8, "q4e8": stage_q4e8}[a.stage](out)
         return
+    log(f"repo: {a.repo}  out: {out}")
     out.mkdir(parents=True, exist_ok=True)
     onnx_dir = out / "onnx"
     plan = ["download"]
@@ -300,7 +323,7 @@ def main():
     plan.append("package")
     for stage in plan:  # one process per stage keeps peak memory low
         log(f"stage: {stage}")
-        cmd = [sys.executable, __file__, "--stage", stage, "--out", str(out), "--variants", ",".join(variants)]
+        cmd = [sys.executable, __file__, "--stage", stage, "--out", str(out), "--variants", ",".join(variants), "--repo", a.repo]
         r = subprocess.run(cmd)
         if r.returncode != 0 and stage == "download":
             # some networks block the Xet download backend; plain HTTPS works everywhere. The switch is read

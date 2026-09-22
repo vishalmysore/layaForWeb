@@ -1,0 +1,114 @@
+name: Build and upload a second checkpoint (e.g. laya-typed-decisions)
+
+# A completely separate flow from deploy.yml: it converts a second Laya checkpoint, verifies it
+# against PyTorch, and uploads it to its own Hugging Face repo. It never touches build/ (the general
+# checkpoint's cache) and never deploys Pages itself, so it cannot break or block the main site.
+# Run it manually (Actions tab -> this workflow -> Run workflow) whenever you want to (re)build the
+# second checkpoint. When it finishes, it triggers "Build model and deploy to GitHub Pages" so the
+# live site picks up the new model base -- that workflow reads HF_MODEL_REPO_TYPED and links to
+# whichever repo this run uploaded to, without rebuilding the general model.
+#
+# One-time setup:
+#   1. Create (or reuse) a Hugging Face model repo, e.g. https://huggingface.co/<you>/layaForWebTrained
+#   2. Repository secret HF_TOKEN: a Hugging Face token with write access (shared with deploy.yml)
+#   3. Repository variable HF_MODEL_REPO_TYPED: <you>/layaForWebTrained
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "Hugging Face checkpoint to convert"
+        default: "convaiinnovations/laya-typed-decisions"
+      variants:
+        description: "Model builds to publish (comma separated: qdq8, q8e8, q4e8)"
+        default: "q8e8,q4e8"
+      hf_repo:
+        description: "Destination Hugging Face model repo (leave blank to use the HF_MODEL_REPO_TYPED repository variable)"
+        default: ""
+      trigger_deploy:
+        description: "Trigger the Pages deploy workflow when this finishes"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: write   # only needed to trigger deploy.yml at the end
+
+env:
+  REPO: ${{ inputs.repo }}
+  VARIANTS: ${{ inputs.variants }}
+  HF_REPO: ${{ inputs.hf_repo || vars.HF_MODEL_REPO_TYPED }}
+  OUT: build-typed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: A destination repo is required
+        run: |
+          if [ -z "$HF_REPO" ]; then
+            echo "::error::Set the HF_MODEL_REPO_TYPED repository variable, or pass hf_repo when running this workflow."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-build.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache key for the repo and variant list
+        run: |
+          echo "REPO_KEY=${REPO//\//-}" >> "$GITHUB_ENV"
+          echo "VARIANTS_KEY=${VARIANTS//,/-}" >> "$GITHUB_ENV"
+
+      # Separate cache from deploy.yml's (different key prefix and path), so the two checkpoints
+      # never share or invalidate each other's cached build.
+      - name: Restore converted model
+        id: model-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.OUT }}/model
+            ${{ env.OUT }}/verify_report.md
+            ${{ env.OUT }}/verify_report.json
+          key: laya-model-typed-${{ hashFiles('scripts/build_model.py', 'requirements-build.txt') }}-${{ env.REPO_KEY }}-${{ env.VARIANTS_KEY }}
+
+      - name: Install Python dependencies
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        run: pip install -r requirements-build.txt
+
+      - name: Convert and quantize the model
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        run: python scripts/build_model.py --repo "$REPO" --out "$OUT" --variants "$VARIANTS"
+
+      - name: Check the converted model against PyTorch
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        run: python scripts/verify_model.py --out "$OUT"
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Check the JavaScript port builds identical token sequences for this checkpoint's tokenizer
+        run: node tests/seq_parity.mjs "$OUT/model"
+
+      - name: Upload the model to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          pip install huggingface_hub
+          python scripts/upload_to_hf.py "$HF_REPO" --folder "$OUT/model"
+
+      - name: Trigger the Pages deploy workflow
+        if: inputs.trigger_deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref "${{ github.ref_name }}"

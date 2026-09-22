@@ -7,8 +7,13 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const arg = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : undefined; };
 const dist = path.resolve(root, arg("--out") || "dist");
-const external = arg("--external-model-base"); // e.g. https://huggingface.co/<user>/<repo>/resolve/main/
+const external = arg("--external-model-base"); // e.g. https://huggingface.co/<user>/laya-en-web/resolve/main/
 const model = path.join(root, "build", "model");
+// The second, optional checkpoint (for example laya-typed-decisions). Unlike the primary model, this one is
+// allowed to simply not exist yet -- the site still builds fine with only the general checkpoint.
+const externalTyped = arg("--external-model-base-typed"); // e.g. https://huggingface.co/<user>/laya-typed-decisions-web/resolve/main/
+const typedModelDir = arg("--typed-model-dir") || "build-typed/model";
+const modelTyped = path.resolve(root, typedModelDir);
 const need = (p, hint) => { if (!fs.existsSync(p)) { console.error(`Missing ${path.relative(root, p)}. ${hint}`); process.exit(1); } };
 
 need(path.join(model, "manifest.json"), "Build the model first: python scripts/build_model.py");
@@ -28,12 +33,27 @@ const tk = path.join(root, "node_modules", "@huggingface", "tokenizers", "dist",
 need(tk, "Install dependencies first: npm ci");
 fs.copyFileSync(tk, path.join(dist, "vendor", "tokenizers.min.mjs"));
 
+const siteConfig = {};
 if (external) {
-  fs.writeFileSync(path.join(dist, "site-config.json"), JSON.stringify({ modelBase: external }, null, 2));
-  console.log(`model files are NOT copied; the page will load them from ${external}`);
+  siteConfig.modelBase = external;
+  console.log(`general model files are NOT copied; the page will load them from ${external}`);
 } else {
   fs.cpSync(model, path.join(dist, "model"), { recursive: true });
 }
+
+// laya-typed-decisions (or any second checkpoint): external URL takes priority; otherwise bundle it only if
+// it has actually been built. Neither is required -- the site is fully usable with only the general model,
+// and the demo pages detect at runtime which base models are actually reachable.
+if (externalTyped) {
+  siteConfig.modelBaseTyped = externalTyped;
+  console.log(`typed-decisions model files are NOT copied; the page will load them from ${externalTyped}`);
+} else if (fs.existsSync(path.join(modelTyped, "manifest.json"))) {
+  fs.cpSync(modelTyped, path.join(dist, "model-typed"), { recursive: true });
+  console.log(`bundled the typed-decisions model from ${path.relative(root, modelTyped)}`);
+} else {
+  console.log(`no typed-decisions model found at ${path.relative(root, modelTyped)} and no --external-model-base-typed given; the site will offer only the general model`);
+}
+if (Object.keys(siteConfig).length) fs.writeFileSync(path.join(dist, "site-config.json"), JSON.stringify(siteConfig, null, 2));
 // License texts and notices travel with every copy of the site (Apache-2.0 and MIT both require it).
 for (const f of ["NOTICE.md", "LICENSE"]) {
   need(path.join(root, f), `${f} is missing from the repository root.`);

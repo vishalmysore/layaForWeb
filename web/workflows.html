@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laya workflows: typed decisions that trigger an action</title>
+<script src="./coi.js"></script>
+<style>
+  :root{
+    --bg:#f6f5f1; --card:#ffffff; --ink:#1c1b19; --ink2:#5b5850; --line:#e3e0d8;
+    --accent:#2a5bd7; --accent-ink:#ffffff; --good:#1f7a4d; --good-bg:#e8f5ee; --good-line:#bfe3cf;
+    --warn:#b4570a; --warn-bg:#fdf1e3; --warn-line:#f0cd9e;
+    --bad:#b4231f; --bad-bg:#fdebea; --bad-line:#f1b7b3;
+    --bar:#d9e2fb; --bar-top:#2a5bd7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#151513; --card:#1e1d1a; --ink:#f0eee8; --ink2:#a6a297; --line:#33312c;
+      --accent:#7ea2ff; --accent-ink:#0d1220;
+      --good:#5fcf95; --good-bg:#12241c; --good-line:#245239;
+      --warn:#f0a35c; --warn-bg:#2a1f10; --warn-line:#5c4322;
+      --bad:#ff8f8a; --bad-bg:#2a1513; --bad-line:#5c2c28;
+      --bar:#2a3555; --bar-top:#7ea2ff; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:980px;margin:0 auto;padding:28px 16px 64px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--ink2);margin:0 0 8px}
+  .backlink{font-size:13px;margin:0 0 20px}
+  .backlink a{color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin:0 0 10px;font-weight:600}
+  label{display:block;font-size:13px;color:var(--ink2);margin:0 0 4px}
+  select,textarea,input[type=number],input[type=text]{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+  textarea{resize:vertical}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end}
+  button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 16px;cursor:pointer}
+  button.secondary{background:transparent;color:var(--accent)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .status{margin-top:12px;font-size:14px;color:var(--ink2)}
+  .progress{height:6px;background:var(--bar);border-radius:3px;overflow:hidden;margin-top:8px;display:none}
+  .progress>div{height:100%;width:0;background:var(--bar-top);transition:width .15s}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .badge{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--ink2)}
+  .badge.ok{color:var(--good);border-color:var(--good)}
+  .field{margin-bottom:12px}
+  .domainDesc{font-size:13px;color:var(--ink2);margin:4px 0 0}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .bar{display:grid;grid-template-columns:130px 1fr 52px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+  .bar .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
+  .bar .track{height:10px;background:var(--bar);border-radius:5px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--bar-top);opacity:.45;border-radius:5px}
+  .bar.top .fill{opacity:1}.bar.top .name{color:var(--ink);font-weight:600}
+  .bar .val{text-align:right;font-variant-numeric:tabular-nums}
+  .q{border-top:1px solid var(--line);padding:10px 0}
+  .q:first-child{border-top:0;padding-top:0}
+  .qhead{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:6px}
+  .qname{font-weight:600}
+  .qtype{font-size:12px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
+  .meta{font-size:12px;color:var(--ink2);margin-top:4px}
+  .outcome{border-radius:10px;border:1px solid var(--line);padding:14px 16px;margin-bottom:14px}
+  .outcome.auto{background:var(--good-bg);border-color:var(--good-line)}
+  .outcome.hold{background:var(--warn-bg);border-color:var(--warn-line)}
+  .outcome.block{background:var(--bad-bg);border-color:var(--bad-line)}
+  .outcome .label{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .outcome.auto .label{color:var(--good)}
+  .outcome.hold .label{color:var(--warn)}
+  .outcome.block .label{color:var(--bad)}
+  .outcome .title{font-size:18px;font-weight:700;margin:4px 0 6px}
+  .outcome .detail{font-size:14px;color:var(--ink)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{font-size:12px;border-radius:999px;padding:3px 10px;background:var(--card);border:1px solid var(--line)}
+  pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:280px}
+  details summary{cursor:pointer;color:var(--accent);font-size:13px;margin-top:10px}
+  .note{font-size:13px;color:var(--ink2)}
+  .warn{color:var(--warn)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Laya workflows</h1>
+  <p class="sub">The same layaForWeb model, applied to nine everyday triage jobs. Type a real message, Laya answers a fixed set of typed questions about it, and a small rule turns those answers into an action: route it, publish it, page someone, or hold it for a person. Nothing you type leaves this page.</p>
+  <p class="backlink"><a href="./index.html">&larr; the raw model demo</a> &middot; <a href="https://github.com/vishalmysore/layaForWeb/tree/main/tests/data" target="_blank" rel="noopener">108 more test cases</a></p>
+
+  <section class="card" id="loadCard">
+    <h2>1 &middot; Load the model</h2>
+    <div class="row" id="baseModelRow" style="display:none">
+      <div>
+        <label for="baseModel">Base model</label>
+        <select id="baseModel"></select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="variant">Model build</label>
+        <select id="variant"><option>Loading model list…</option></select>
+      </div>
+      <div>
+        <label for="backend">Backend</label>
+        <select id="backend">
+          <option value="wasm">WASM (CPU, checked against PyTorch)</option>
+          <option value="auto">Auto: WebGPU if available (experimental)</option>
+          <option value="webgpu">WebGPU (experimental, see README)</option>
+        </select>
+      </div>
+      <div><button id="loadBtn">Load model</button></div>
+    </div>
+    <div class="progress" id="progress"><div id="progressBar"></div></div>
+    <div class="status" id="status">Not loaded yet. Uses the same model files as the main demo, so if you loaded it there this visit, it loads from the browser cache here too.</div>
+    <div class="badges" id="badges"></div>
+  </section>
+
+  <section class="card">
+    <h2>2 &middot; Pick a workflow and type a message</h2>
+    <div class="field">
+      <label for="domain">Workflow</label>
+      <select id="domain"></select>
+      <p class="domainDesc" id="domainDesc"></p>
+    </div>
+    <div class="field" id="subjectField" style="display:none">
+      <label for="subject">Subject</label>
+      <input type="text" id="subject" placeholder="Short subject line">
+    </div>
+    <div class="field">
+      <label for="message">Message (type your own, or press "Try an example")</label>
+      <textarea id="message" rows="5" spellcheck="false"></textarea>
+    </div>
+    <div class="row">
+      <div>
+        <label for="thresh">Act automatically when confidence ≥ <span id="threshVal">0.90</span></label>
+        <input type="range" id="thresh" min="0.5" max="0.99" step="0.01" value="0.9" style="width:100%">
+      </div>
+      <div class="actions">
+        <button class="secondary" id="exampleBtn" type="button">Try an example</button>
+        <button id="runBtn" disabled>Run workflow (Ctrl+Enter)</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="resultCard" style="display:none">
+    <h2>3 &middot; What the workflow did</h2>
+    <div id="outcome"></div>
+    <div id="answers"></div>
+    <details><summary>Raw Laya JSON</summary><pre id="raw"></pre></details>
+  </section>
+
+  <p class="note">Every workflow rule here is a few lines of JavaScript acting on Laya's own probabilities &mdash; there is no second model deciding on top of it, and nothing is sent to a server. Built on Laya by ConvAI Innovations (Apache-2.0), converted to ONNX and quantized for the browser. Unofficial; not affiliated with ConvAI Innovations. <a href="./NOTICE.txt">Notices</a> &middot; <a href="./LICENSE.txt">License</a></p>
+</main>
+<script type="module" src="./workflows.js"></script>
+</body>
+</html>

@@ -128,6 +128,24 @@ node scripts/prepare_site.mjs --external-model-base https://huggingface.co/yourn
 
 Any static host with CORS enabled works for the model files: open the page with `?modelBase=https://example.com/laya/model/`.
 
+## A second checkpoint: laya-typed-decisions
+
+Laya's authors also publish [`convaiinnovations/laya-typed-decisions`](https://huggingface.co/convaiinnovations/laya-typed-decisions), the same 421M-parameter architecture fine-tuned specifically for typed-decision workflows (the general checkpoint's own model card reports 0.362 accuracy on that benchmark against the fine-tune's 0.766). `build_model.py`, `verify_model.py` and `upload_to_hf.py` all take a checkpoint as an argument, so converting it is the same process in a separate output directory:
+
+```
+python scripts/build_model.py --repo convaiinnovations/laya-typed-decisions --out build-typed --variants q8e8,q4e8
+python scripts/verify_model.py --out build-typed
+node tests/seq_parity.mjs build-typed/model
+python scripts/upload_to_hf.py yourname/laya-typed-decisions-web --folder build-typed/model
+node scripts/prepare_site.mjs --external-model-base-typed https://huggingface.co/yourname/laya-typed-decisions-web/resolve/main/
+```
+
+`build_model.py` reads the checkpoint's own `max_len`/`head_max_len` from its `rl_agent_config.json` rather than assuming the general checkpoint's 512/192 (laya-typed-decisions uses 1024/256), so the same command works for either checkpoint unchanged.
+
+On GitHub Actions this is a **separate, manually-triggered workflow**, `.github/workflows/deploy-typed.yml` (Actions tab → run it), so converting the second checkpoint can never block or break a Pages deploy of the first one. One-time setup: create a Hugging Face repo for it, then set the repository variable `HF_MODEL_REPO_TYPED` to that repo (for example `yourname/laya-typed-decisions-web`) alongside the existing `HF_TOKEN` secret. When the workflow finishes uploading, it triggers `deploy.yml`, which links to both models without rebuilding either.
+
+Either way, once both are available (locally under `build/model` and `build-typed/model`, or both uploaded to Hugging Face), the demo pages (`index.html` and `workflows.html`) show a **Base model** dropdown and let the visitor choose. A checkpoint that isn't built yet is simply left out of the dropdown — nothing else in the site depends on it existing.
+
 ## More test data
 
 `tests/data/` holds 108 labeled cases in 9 domains (support tickets, reviews, agent guardrails, incidents, moderation, email, deliveries, sales leads, clinic messages). They are not in the demo's Example dropdown; the page links to the folder instead. `python scripts/eval_dataset.py` scores them against the original PyTorch model, and `tests/data/README.md` explains the format and the first results.
@@ -157,7 +175,8 @@ Any static host with CORS enabled works for the model files: open the page with 
 | `tests/` | token sequence parity test and headless browser smoke test |
 | `tests/data/` | 108 labeled test cases in 9 domains, with their own README |
 | `serve.py` | local static server (`--no-coi` mimics GitHub Pages) |
-| `.github/workflows/deploy.yml` | build, test and deploy workflow |
+| `.github/workflows/deploy.yml` | build, test and deploy workflow (general checkpoint) |
+| `.github/workflows/deploy-typed.yml` | separate, manual workflow: converts and uploads a second checkpoint, e.g. laya-typed-decisions |
 | `LICENSE`, `NOTICE.md`, `licenses/` | license text, notices and third-party license texts |
 
 ## License

@@ -3,10 +3,19 @@ import { Tokenizer } from "./vendor/tokenizers.min.mjs";
 import { Laya } from "./laya-core.js";
 
 const $ = (id) => document.getElementById(id);
-// Where the model files live. Override with ?modelBase=https://host/path/ to serve them from elsewhere (needs CORS).
-// A deployment can also point at a Hugging Face repo through site-config.json ({"modelBase": "..."}).
-let MODEL_DIR = "./model/";
+// Two base checkpoints can be offered side by side: the general English model, and (optionally) a
+// second one fine-tuned for typed-decision workflows, convaiinnovations/laya-typed-decisions. Each has
+// its own folder and manifest. Override a folder with ?modelBase=... / ?modelBaseTyped=... (needs CORS
+// if it points elsewhere), or point a deployment at Hugging Face through site-config.json
+// ({"modelBase": "...", "modelBaseTyped": "..."}). The typed base is entirely optional: if its
+// manifest can't be found, it's left out of the "Base model" list and the page works as before.
+const BASES = {
+  laya: { label: "Laya (general)", dir: "./model/", param: "modelBase", configKey: "modelBase" },
+  typed: { label: "Laya (typed decisions)", dir: "./model-typed/", param: "modelBaseTyped", configKey: "modelBaseTyped" },
+};
+let MODEL_DIR = BASES.laya.dir;
 let MANIFEST = null;
+let BASE_KEY = "laya";
 
 const PRESETS = {
   "Support ticket": {
@@ -240,23 +249,53 @@ async function verify() {
   finally { $("verifyBtn").disabled = false; }
 }
 
-async function initManifest() {
+async function resolveBaseDir(key) {
+  const b = BASES[key];
+  let dir = new URLSearchParams(location.search).get(b.param);
+  if (!dir) { try { const c = await fetch("./site-config.json"); if (c.ok) dir = (await c.json())[b.configKey]; } catch { /* no config: model sits next to the page */ } }
+  return (dir || b.dir).replace(/\/?$/, "/");
+}
+
+async function probeBase(key) {
+  const dir = await resolveBaseDir(key);
   try {
-    let base = new URLSearchParams(location.search).get("modelBase");
-    if (!base) { try { const c = await fetch("./site-config.json"); if (c.ok) base = (await c.json()).modelBase; } catch { /* no config: model sits next to the page */ } }
-    if (base) MODEL_DIR = base.replace(/\/?$/, "/");
-    const r = await fetch(MODEL_DIR + "manifest.json");
+    const r = await fetch(dir + "manifest.json");
     if (!r.ok) throw new Error("HTTP " + r.status);
-    MANIFEST = await r.json();
-    const sel = $("variant"); sel.innerHTML = "";
-    for (const [k, v] of Object.entries(MANIFEST.variants)) sel.add(new Option(`${v.label} (~${Math.round(v.data.size / 1048576)} MB)`, k));
-    $("loadBtn").disabled = false;
+    return { key, dir, manifest: await r.json() };
   } catch (e) {
-    setStatus("No model found next to this page (" + (e?.message || e) + "). Build it first, see the README.", "warn");
+    return { key, dir, manifest: null, error: e };
   }
 }
+
+let AVAILABLE = {};
+function applyBase(key) {
+  BASE_KEY = key;
+  const a = AVAILABLE[key];
+  MODEL_DIR = a.dir; MANIFEST = a.manifest;
+  const vsel = $("variant"); vsel.innerHTML = "";
+  for (const [k, v] of Object.entries(MANIFEST.variants)) vsel.add(new Option(`${v.label} (~${Math.round(v.data.size / 1048576)} MB)`, k));
+  laya = null; $("runBtn").disabled = true; $("verifyBtn").disabled = true; $("loadBtn").disabled = false; $("badges").innerHTML = "";
+  setStatus(`${BASES[key].label} selected. Not loaded yet. Loading downloads the model files from this site (a few hundred MB, once per visit).`);
+}
+
+// Both base checkpoints are probed at startup; a base that has no reachable manifest.json is simply
+// left out of the dropdown instead of failing the page (this is how the typed-decisions checkpoint
+// stays fully optional -- see prepare_site.mjs and the README).
+async function initManifests() {
+  const probes = await Promise.all(Object.keys(BASES).map(probeBase));
+  const sel = $("baseModel"); sel.innerHTML = "";
+  for (const p of probes) if (p.manifest) { AVAILABLE[p.key] = p; sel.add(new Option(BASES[p.key].label, p.key)); }
+  if (!Object.keys(AVAILABLE).length) {
+    const first = probes[0];
+    setStatus("No model found next to this page (" + (first.error?.message || first.error) + "). Build it first, see the README.", "warn");
+    return;
+  }
+  $("baseModelRow").style.display = Object.keys(AVAILABLE).length > 1 ? "" : "none";
+  applyBase(Object.keys(AVAILABLE)[0]);
+}
 $("loadBtn").disabled = true;
-initManifest();
+$("baseModel").addEventListener("change", () => applyBase($("baseModel").value));
+initManifests();
 
 // wiring
 for (const k of Object.keys(PRESETS)) $("preset").add(new Option(k, k));
