@@ -74,6 +74,20 @@ export function tempBucket(qt, k) {
   const size = k <= 2 ? "2" : k <= 5 ? "3-5" : k <= 10 ? "6-10" : "11+";
   return `${QTYPE_NAMES[qt]}:${size}`;
 }
+
+// Port of Python's clamp_temperature (laya/common.py). Both shipped checkpoints have
+// choice:11+ = 0.10058, the one bucket outside [0.5, 5]; using it raw sharpens those logits ~10x
+// and inflates confidence for choice questions with 11+ options. Non-numeric, NaN and +-inf fall
+// back to 1.0, like Python's float() coercion; everything else is clamped into [TEMP_MIN, TEMP_MAX].
+const TEMP_MIN = 0.5, TEMP_MAX = 5.0;
+export function clampTemperature(t) {
+  let v;
+  if (typeof t === "number") v = t;
+  else if (typeof t === "string" && t.trim() !== "") v = Number(t);
+  else return 1.0;
+  if (!Number.isFinite(v)) return 1.0;
+  return Math.min(TEMP_MAX, Math.max(TEMP_MIN, v));
+}
 export function confidenceFromProbs(p, k) {
   if (k < 2) return 1.0;
   let ent = 0;
@@ -131,8 +145,8 @@ export class Laya {
     const answers = {};
     ids.forEach((qid, r) => {
       const q = qs[r], k = items[r].markers.length, qt = items[r].qtype;
-      const tScale = cfg.temperature_by_options?.[tempBucket(qt, k)] ?? cfg.temperature[qt];
-      const z = Array.from({ length: k }, (_, i) => logits[r * b.kmax + i] / Math.max(1e-3, tScale));
+      const tScale = clampTemperature(cfg.temperature_by_options?.[tempBucket(qt, k)] ?? cfg.temperature[qt]);
+      const z = Array.from({ length: k }, (_, i) => logits[r * b.kmax + i] / tScale);
       const zmax = Math.max(...z);
       const e = z.map((v) => Math.exp(v - zmax));
       const s = e.reduce((a, v) => a + v, 0);

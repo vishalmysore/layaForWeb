@@ -15,7 +15,7 @@ import argparse, json, os, sys
 from pathlib import Path
 import numpy as np, torch, onnxruntime as ort
 import laya
-from laya.common import build_sequence, collate_items, QTYPES, temp_bucket
+from laya.common import build_sequence, collate_items, QTYPES, temp_bucket, clamp_temperature
 
 ROOT = Path(__file__).resolve().parent.parent
 # (min top-answer agreement, max mean of the largest per-question probability difference)
@@ -74,9 +74,9 @@ def main():
             lo = sessions[v].run(None, feeds)[0]
             for r, q in enumerate(iq):
                 k = len(items[r]["markers"]); qt = QTYPES[q["t"]]
-                ts = agent.temperature_by_options.get(temp_bucket(qt, k), agent.temperature[qt])
+                ts = clamp_temperature(agent.temperature_by_options.get(temp_bucket(qt, k), agent.temperature[qt]))
                 def P(l):
-                    z = l[r, :k] / max(1e-3, float(ts)); e = np.exp(z - z.max()); return e / e.sum()
+                    z = l[r, :k] / ts; e = np.exp(z - z.max()); return e / e.sum()
                 pr, po = P(ref), P(lo)
                 stats[v]["dp"].append(float(np.abs(pr - po).max()))
                 stats[v]["same"].append(bool(pr.argmax() == po.argmax()))
